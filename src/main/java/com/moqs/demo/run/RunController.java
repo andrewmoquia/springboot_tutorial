@@ -14,7 +14,6 @@ import java.util.Optional;
 @RequestMapping("/api/runs")
 public class RunController {
 
-    private static final Logger log = LoggerFactory.getLogger(RunController.class);
     private final RunRepository runRepository;
 
     public RunController(RunRepository runRepository) {
@@ -30,19 +29,16 @@ public class RunController {
     Run findById(@PathVariable Integer id) {
         Optional<Run> run = runRepository.findById(id);
 
-        log.info(String.valueOf(run));
-
         if (run.isEmpty()) {
             throw new RunNotFoundException();
         }
         return run.get();
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("")
-    Run create(@Valid @RequestBody Run run) {
+    void create(@Valid @RequestBody Run run) {
         runRepository.create(run);
-        return run;
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)

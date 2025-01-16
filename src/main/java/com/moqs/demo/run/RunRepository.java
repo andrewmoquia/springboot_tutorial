@@ -1,56 +1,73 @@
 package com.moqs.demo.run;
 
-import com.moqs.demo.utilities.RunNotFoundException;
-import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.Assert;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public class RunRepository {
-    private final List<Run> run = new ArrayList<>();
+    private static final Logger log = LoggerFactory.getLogger(RunRepository.class);
+    private final JdbcClient jdbcClient;
 
-    List<Run> findAll() {
-        return run;
+    public RunRepository(JdbcClient jdbcClient) {
+        this.jdbcClient = jdbcClient;
     }
 
-    Optional<Run> findById(Integer id) {
-        return run.stream()
-                .filter(run -> run.id().equals(id))
-                .findFirst();
+    public List<Run> findAll() {
+        return jdbcClient.sql("SELECT * FROM Run")
+                .query(Run.class)
+                .list();
     }
 
-    void create(Run run) {
-        this.run.add(run);
+    public Optional<Run> findById(Integer id) {
+        //noinspection JpaQueryApiInspection
+        return jdbcClient.sql("SELECT id, title, started_on, ended_on, miles, location FROM Run WHERE id = :id")
+                .param("id", id)
+                .query(Run.class)
+                .optional();
     }
 
-    void update(Run run) {
-        Optional<Run> existingRun = findById(run.id());
+    public void create(Run run) {
+        var updated = jdbcClient.sql("INSERT INTO Run(id, title, started_on, ended_on, miles, location) VALUES (?, ?, ?, ?, ?, ?)")
+                .params(List.of(run.id(), run.title(), run.startedOn(), run.endedOn(), run.miles(), run.location().name()))
+                .update();
 
-        if (existingRun.isEmpty()) {
-            throw new RunNotFoundException();
-        }
-
-        this.run.remove(existingRun.get());
-        this.run.add(run);
+        Assert.state(updated == 1, "Failed to create run" + run.title());
     }
 
-    void delete(Integer id) {
-        Optional<Run> existingRun = findById(id);
+    public void update(Run run) {
+        var updated = jdbcClient.sql("UPDATE Run SET title = ?, started_on = ?, ended_on = ?, miles = ?, location = ? WHERE id = ?")
+                .params(List.of(run.title(), run.startedOn(), run.endedOn(), run.miles(), run.location().name(), run.id()))
+                .update();
 
-        if (existingRun.isEmpty()) {
-            throw new RunNotFoundException();
-        }
-
-        this.run.remove(existingRun.get());
+        Assert.state(updated == 1, "Failed to update run" + run.title());
     }
 
-    @PostConstruct
-    private void init() {
-        run.add(new Run(1, "Morning Run", LocalDateTime.now(), LocalDateTime.now().plusHours(1), 5, Location.OUTDOOR));
-        run.add(new Run(2, "Evening Run", LocalDateTime.now().plusHours(2), LocalDateTime.now().plusHours(2).plusMinutes(30), 10, Location.OUTDOOR));
+    public void delete(Integer id) {
+        var updated = jdbcClient.sql("DELETE FROM Run WHERE id = ?")
+                .params(List.of(id))
+                .update();
+
+        Assert.state(updated == 1, "Failed to delete run" + id);
+    }
+
+    public int count() {
+        return jdbcClient.sql("SELECT COUNT(*) FROM Run")
+                .query()
+                .listOfRows()
+                .size();
+    }
+
+    public List<Run> findByLocation(Location location) {
+        //noinspection JpaQueryApiInspection
+        return jdbcClient.sql("SELECT * FROM Run WHERE location = :location")
+                .param("location", location.name())
+                .query(Run.class)
+                .list();
     }
 }
