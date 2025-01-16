@@ -11,7 +11,6 @@ import java.util.Optional;
 
 @Repository
 public class RunRepository {
-    private static final Logger log = LoggerFactory.getLogger(RunRepository.class);
     private final JdbcClient jdbcClient;
 
     public RunRepository(JdbcClient jdbcClient) {
@@ -69,5 +68,9 @@ public class RunRepository {
                 .param("location", location.name())
                 .query(Run.class)
                 .list();
+    }
+
+    public void saveAll(List<Run> runs) {
+        runs.forEach(this::create);
     }
 }
