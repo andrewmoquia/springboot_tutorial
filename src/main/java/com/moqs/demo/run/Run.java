@@ -4,11 +4,13 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 
 import java.time.LocalDateTime;
 
 public record Run(
-        @Positive
+        @Id @Positive
         Integer id,
         @NotNull
         String title,
@@ -19,7 +21,9 @@ public record Run(
         @Positive
         Integer miles,
         @NotNull
-        Location location
+        Location location,
+        @Version
+        Integer version
 ) {
     public Run {
         if(startedOn.isAfter(endedOn)) {

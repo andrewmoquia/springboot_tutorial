@@ -2,8 +2,6 @@ package com.moqs.demo.run;
 
 import com.moqs.demo.utilities.RunNotFoundException;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,18 +36,31 @@ public class RunController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("")
     void create(@Valid @RequestBody Run run) {
-        runRepository.create(run);
+        runRepository.save(run);
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("")
     void update(@Valid @RequestBody Run run) {
-        runRepository.update(run);
+        Run existingRun = runRepository.findById(run.id())
+                .orElseThrow(RunNotFoundException::new);
+
+        Run updatedRun = new Run(
+                run.id(),
+                run.title(),
+                run.startedOn(),
+                run.endedOn(),
+                run.miles(),
+                run.location(),
+                existingRun.version() // Preserve the current version
+        );
+
+        runRepository.save(updatedRun);
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
     void delete(@PathVariable Integer id) {
-        runRepository.delete(id);
+        runRepository.delete(runRepository.findById(id).get());
     }
 }
