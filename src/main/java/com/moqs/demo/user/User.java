@@ -16,7 +16,7 @@ public record User(
     @NotNull
     String lastname,
     @NotNull
-    Email email,
+    String email,
     @NotNull
     LocalDate birthDate,
     @NotNull
@@ -24,9 +24,9 @@ public record User(
     @NotNull
     Address address,
     @NotNull
-    Integer phone,
+    String phone,
     @NotNull
-    URL website,
+    String website,
     @NotNull
     Company company
 ) {
